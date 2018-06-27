@@ -1,2 +1,9 @@
-# python_gushiwen
-原生python爬取古诗文网(https://www.gushiwen.org/)所有诗人及作品
+# 原生python爬取古诗文网所有诗人及作品(https://www.gushiwen.org/)
+看完慕课网中《Python3入门与进阶》课程之后，拿来练练手<br />
+环境要求：<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;python3、mongodb、memcache<br />
+简介：<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;入口文件为main.py；<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;正常情况下20分钟可跑完该脚本；<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;平均内存占用量50M；<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;支持断点续传；<br />
