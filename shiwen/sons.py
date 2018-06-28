@@ -8,11 +8,13 @@ class Sons:
     author_id = 1
     file_io = False
 
+    # 统一log方法
     def __log_add(self, log):
         if not self.file_io:
             self.file_io = open('./sons.log', 'a')
         self.file_io.write('\n'+time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + ' ' + str(log))
 
+    # 避免打开关闭次数过多，程序开始时打开，程序停止时再关闭
     def __io_close(self):
         self.file_io.close()
 
@@ -51,10 +53,11 @@ class Sons:
 
             soup = BeautifulSoup(request.text, 'lxml')
 
-            # 列表中每个诗人信息的div
+            # 列表中每个诗歌信息的div
             son_list = soup.select(' div.sons')
             if not son_list:
                 break
+            # 防止page无限增大（某些诗人 如：李白 页数无限增大后依然有数据，原站bug）
             if current_page > ((author['count'] // 10) + 1):
                 self.__log_add('max_page_err ' + author['name'] + ' count ' + str(current_page))
                 break
@@ -66,6 +69,7 @@ class Sons:
                 praise = son_list[i].select(' div.tool > div.good > a > span')
                 tags = son_list[i].select(' div.tag > a')
 
+                # 对将入库的数据去重（有很多重复数据，原站的bug）
                 num_unique = name[0].get('href')[9:-5] if name else ''
                 if num_unique:
                     if mem_obj.mc("get", self.mem_key + num_unique):
@@ -84,12 +88,13 @@ class Sons:
                         'tags': []
                         }
 
+                    # 检验诗的朝代是否在预定义朝代枚举中，如果不存在则将新朝代实时添加到枚举中，再将朝代id赋予cid
                     if dynasty:
                         if dynasty[0].text and (dynasty[0].text not in dynasties):
                             dynasties.append(dynasty[0].text)
                             self.__log_add('addDynasty: ' + dynasty[0].text)
                         info['cid'] = dynasties.index(dynasty[0].text)
-                    # 检验诗的分类是否在预定义分类中，如果在则将分类id赋予tags
+                    # 检验诗的分类是否在预定义分类中，如果不存在则将新分类实时添加到枚举中，再将分类id赋予tags
                     if tags:
                         for tag in tags:
                             if tag.text.strip() not in sons_types:
@@ -97,6 +102,9 @@ class Sons:
                                 self.__log_add('addType: '+tag.text.strip())
                             info['tags'].append(sons_types.index(tag.text.strip()))
 
+                    # 原站诗歌分两种布局
+                    # 一种类似 https://so.gushiwen.org/authors/authorvsw_b90660e3e492A1.aspx 里的《将进酒》
+                    # 一种类似 https://so.gushiwen.org/authors/authorvsw_3b99a16ff2ddA1.aspx 里的《水调歌头》
                     son_p = content[0].select(' p')
                     if son_p:
                         for j in son_p:
@@ -123,12 +131,14 @@ class Sons:
 
     def go(self):
         print(' begin get sons ... ')
-        # 跟据诗人id自增遍历
         while True:
+            # 跟据诗人id自增遍历
             author = self.__get_author_by_id(self.author_id)
             if author:
+                # 跟据诗人id获取诗人所有诗歌
                 son_list = self.__get_son(author)
                 if son_list:
+                    # 将诗人所有诗歌存入mongodb
                     add_res = self.__son_save(son_list)
                     if not add_res.acknowledged:
                         self.__log_add('add mongo error ' + str(son_list))
@@ -142,6 +152,7 @@ class Sons:
                     pass
                     # self.__log_add('未获取到 {} 的诗歌'.format(author['name']))
             else:
+                # 最后输出现有的所有诗歌类型、朝代枚举（发懒没存mongo里~~~）
                 self.__log_add(sons_types)
                 self.__log_add(dynasties)
                 self.__io_close()

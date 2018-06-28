@@ -48,6 +48,7 @@ class Authors:
                 url = sonspics[i].select(' div.cont > p:nth-of-type(2) > a')
                 praise = sonspics[i].select(' div.tool > div.good > a > span ')
 
+                # 对将入库的数据去重（有很多重复数据，原站的bug）
                 url_unique = url[0].get('href') if url else ''
                 if url_unique:
                     if mem_obj.mc("get", self.mem_key+url_unique):
@@ -76,9 +77,12 @@ class Authors:
 
     def go(self):
         print(' begin get authors ... ')
+        # 遍历获取所有朝代
         for i in range(0, len(dynasties)):
+            # 跟据朝代爬取诗人
             authors = self.__get_chaodai_authors(dynasties[i], i)
             if authors:
+                # 把诗人信息存入mongodb
                 add_res = self.__authors_save(authors)
                 print('add mongo result', add_res.acknowledged)
                 # 释放本次爬取结果，以免内存占用过大
